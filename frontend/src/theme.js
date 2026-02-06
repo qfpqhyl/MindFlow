@@ -91,6 +91,21 @@ const theme = createTheme({
     '0 12px 48px rgba(0,0,0,0.20)',
   ],
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        '@global': {
+          /* Hide scrollbar for Chrome, Safari and Opera */
+          '*::-webkit-scrollbar': {
+            display: 'none',
+          },
+          /* Hide scrollbar for IE, Edge and Firefox */
+          '*': {
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          },
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {

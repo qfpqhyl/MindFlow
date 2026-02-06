@@ -56,7 +56,12 @@ class NVIDIAAPIService:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            # Disable proxy and trust_env to avoid SOCKS proxy errors
+            async with httpx.AsyncClient(
+                timeout=120.0,
+                proxy=None,
+                trust_env=False
+            ) as client:
                 if stream:
                     async with client.stream(
                         "POST",

@@ -29,6 +29,7 @@ import {
   TaskAlt,
 } from '@mui/icons-material';
 import { conversationsAPI, messagesAPI, organizeAPI } from '../services/api';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const ChatPage = () => {
   const { conversationId } = useParams();
@@ -221,7 +222,19 @@ const ChatPage = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+    <Container
+      maxWidth="md"
+      sx={{
+        height: 'calc(100vh - 120px)',
+        display: 'flex',
+        flexDirection: 'column',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        '&::-webkit-scrollbar': {
+          display: 'none',
+        },
+      }}
+    >
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
         <IconButton onClick={() => navigate('/conversations')} sx={{ mr: 1 }}>
@@ -255,7 +268,18 @@ const ChatPage = () => {
       <Divider sx={{ mb: 3 }} />
 
       {/* Messages */}
-      <Box sx={{ flex: 1, overflow: 'auto', mb: 2 }}>
+      <Box
+        sx={{
+          flex: 1,
+          overflow: 'auto',
+          mb: 2,
+          scrollbarWidth: 'none', // Firefox
+          msOverflowStyle: 'none', // IE/Edge
+          '&::-webkit-scrollbar': {
+            display: 'none', // Chrome/Safari
+          },
+        }}
+      >
         {messages.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 12 }}>
             <Typography variant="h6" color="text.secondary">
@@ -302,9 +326,13 @@ const ChatPage = () => {
                     border: message.role === 'assistant' ? '1px solid #E0E0E0' : 'none',
                   }}
                 >
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                    {message.content}
-                  </Typography>
+                  {message.role === 'assistant' ? (
+                    <MarkdownRenderer content={message.content} />
+                  ) : (
+                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {message.content}
+                    </Typography>
+                  )}
                 </Paper>
               </Box>
             </Box>
@@ -343,10 +371,8 @@ const ChatPage = () => {
                   border: '1px solid #E0E0E0',
                 }}
               >
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {streamingContent}
-                  {sending && <span component="span" sx={{ animation: 'blink 1s infinite' }}>▋</span>}
-                </Typography>
+                <MarkdownRenderer content={streamingContent} />
+                {sending && <span component="span" sx={{ animation: 'blink 1s infinite' }}>▋</span>}
               </Paper>
             </Box>
           </Box>

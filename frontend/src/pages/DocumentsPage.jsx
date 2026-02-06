@@ -26,12 +26,14 @@ import {
   Label,
 } from '@mui/icons-material';
 import { documentsAPI } from '../services/api';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const DocumentsPage = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [openViewDialog, setOpenViewDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [formData, setFormData] = useState({
@@ -94,6 +96,11 @@ const DocumentsPage = () => {
     setSelectedDoc(null);
   };
 
+  const handleViewDocument = (doc) => {
+    setSelectedDoc(doc);
+    setOpenViewDialog(true);
+  };
+
   const filteredDocuments = documents.filter((doc) =>
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (doc.summary && doc.summary.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -138,7 +145,12 @@ const DocumentsPage = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   position: 'relative',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    boxShadow: 3,
+                  },
                 }}
+                onClick={() => handleViewDocument(doc)}
               >
                 <CardContent sx={{ flex: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
@@ -240,6 +252,54 @@ const DocumentsPage = () => {
             创建
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* View Document Dialog */}
+      <Dialog
+        open={openViewDialog}
+        onClose={() => setOpenViewDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">{selectedDoc?.title}</Typography>
+            <IconButton onClick={() => setOpenViewDialog(false)}>
+              <MoreVert />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedDoc?.summary && (
+            <>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                摘要
+              </Typography>
+              <Typography variant="body2" paragraph>
+                {selectedDoc.summary}
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+            </>
+          )}
+          <MarkdownRenderer content={selectedDoc?.content || '无内容'} />
+          {selectedDoc?.tags && selectedDoc.tags.length > 0 && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 2 }}>
+                {selectedDoc.tags.map((tag, index) => (
+                  <Chip
+                    key={index}
+                    label={tag}
+                    size="small"
+                    variant="outlined"
+                    icon={<Label sx={{ fontSize: 14 }} />}
+                    sx={{ borderRadius: 0 }}
+                  />
+                ))}
+              </Box>
+            </>
+          )}
+        </DialogContent>
       </Dialog>
 
       {/* Context Menu */}
