@@ -228,6 +228,7 @@ class ModelInfo(BaseModel):
     id: str
     name: str
     provider: str = "nvidia"
+    description: Optional[str] = None
 
 
 class ModelsListResponse(BaseModel):

@@ -10,13 +10,22 @@ import {
   Divider,
   Avatar,
   IconButton,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Chip,
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { aiAPI, usersAPI } from '../services/api';
 
 const SettingsPage = () => {
   const { user, updateUser } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [loadingModels, setLoadingModels] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -34,8 +43,22 @@ const SettingsPage = () => {
         username: user.username || '',
         email: user.email || '',
       });
+      setSelectedModel(user.settings?.default_model_id || 'minimaxai/minimax-m2.1');
     }
+    fetchModels();
   }, [user]);
+
+  const fetchModels = async () => {
+    try {
+      setLoadingModels(true);
+      const response = await aiAPI.getModels();
+      setModels(response.data.data.models || []);
+    } catch (error) {
+      console.error('Failed to fetch models:', error);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     const result = await updateUser(formData);
@@ -57,6 +80,37 @@ const SettingsPage = () => {
 
     // TODO: Implement password change API call
     setMessage('密码修改功能待实现');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const handleChangeModel = async () => {
+    try {
+      // Update model on server
+      const response = await aiAPI.setDefaultModel({ model_id: selectedModel });
+
+      if (response.data.code === 200) {
+        setMessage('模型已更新');
+
+        // Re-fetch user data to get updated settings
+        try {
+          const userResponse = await usersAPI.getMe();
+          const updatedUser = userResponse.data.data;
+
+          // Update local storage
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+
+          // Update auth context
+          // Note: We need to trigger a re-render or update the auth context
+          window.location.reload(); // Simple reload to refresh user context
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+        }
+      } else {
+        setMessage('模型更新失败：' + response.data.message);
+      }
+    } catch (error) {
+      setMessage('模型更新失败：' + (error.response?.data?.message || error.message));
+    }
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -204,17 +258,63 @@ const SettingsPage = () => {
           <Typography variant="h6" gutterBottom>
             AI 模型设置
           </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
-            <Box>
-              <Typography variant="caption" color="text.secondary">默认模型</Typography>
-              <Typography variant="body2">
-                {user.settings?.default_model_id || 'meta/llama-3.1-405b-instruct'}
+
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              选择默认 AI 模型用于对话
+            </Typography>
+
+            {loadingModels ? (
+              <Typography variant="body2" color="text.secondary">
+                加载模型列表...
               </Typography>
-            </Box>
+            ) : (
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel>选择 AI 模型</InputLabel>
+                <Select
+                  value={selectedModel}
+                  label="选择 AI 模型"
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                >
+                  {models.map((model) => (
+                    <MenuItem key={model.id} value={model.id}>
+                      <Box sx={{ width: '100%' }}>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {model.name}
+                        </Typography>
+                        {model.description && (
+                          <Typography variant="caption" color="text.secondary">
+                            {model.description}
+                          </Typography>
+                        )}
+                        <Chip
+                          label={model.provider}
+                          size="small"
+                          variant="outlined"
+                          sx={{ ml: 1, fontSize: '0.7rem' }}
+                        />
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Box>
-          <Button variant="outlined" sx={{ mt: 2 }} disabled>
-            更改模型（待实现）
-          </Button>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              variant="contained"
+              onClick={handleChangeModel}
+              disabled={loadingModels || !selectedModel}
+            >
+              保存模型设置
+            </Button>
+            {selectedModel && (
+              <Typography variant="body2" color="text.secondary">
+                当前选择：{models.find(m => m.id === selectedModel)?.name || selectedModel}
+              </Typography>
+            )}
+          </Box>
         </CardContent>
       </Card>
 

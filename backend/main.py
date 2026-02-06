@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="MindFlow API",
-    description="MindFlow - 智能工作流应用 API",
+    description="MindFlow - 思流如潮，智能工作流应用 - 集成聊天、文档管理和定时任务",
     version="1.0.0",
     lifespan=lifespan
 )

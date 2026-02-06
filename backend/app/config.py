@@ -24,10 +24,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    # NVIDIA API
+    # AI Model Settings
     nvidia_api_key: str
     nvidia_api_base_url: str = "https://integrate.api.nvidia.com/v1/chat/completions"
-    default_model: str = "meta/llama-3.1-405b-instruct"
+    default_model: str = "minimaxai/minimax-m2.1"  # Default to MiniMax M2.1
 
     # Email Settings
     smtp_host: str = "smtp.feishu.cn"

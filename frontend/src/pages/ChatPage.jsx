@@ -102,7 +102,7 @@ const ChatPage = () => {
 
       // Stream AI response
       let assistantContent = '';
-      await messagesAPI.sendStream(
+      const streamResult = await messagesAPI.sendStream(
         conversationId,
         messageContent,
         // onChunk - called for each chunk of content
@@ -144,6 +144,17 @@ const ChatPage = () => {
           setSending(false);
         }
       );
+
+      // Ensure sending is reset even if stream completes without proper callbacks
+      if (streamResult) {
+        // Stream completed successfully but callbacks might not have been triggered
+        if (assistantContent && !streamingContent) {
+          setSending(false);
+        }
+      } else {
+        // Stream had an error
+        setSending(false);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       setSnackbar({

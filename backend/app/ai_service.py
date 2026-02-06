@@ -58,38 +58,46 @@ class NVIDIAAPIService:
         try:
             # Disable proxy and trust_env to avoid SOCKS proxy errors
             async with httpx.AsyncClient(
-                timeout=120.0,
+                timeout=httpx.Timeout(120.0, connect=60.0),
                 proxy=None,
-                trust_env=False
+                trust_env=False,
+                limits=httpx.Limits(max_keepalive_connections=5)
             ) as client:
                 if stream:
-                    async with client.stream(
-                        "POST",
-                        self.base_url,
-                        headers=headers,
-                        json=payload
-                    ) as response:
-                        if response.status_code != 200:
-                            error_text = await response.aread()
-                            logger.error(f"NVIDIA API error: {error_text}")
-                            yield f"Error: API returned status {response.status_code}"
-                            return
+                    try:
+                        async with client.stream(
+                            "POST",
+                            self.base_url,
+                            headers=headers,
+                            json=payload
+                        ) as response:
+                            if response.status_code != 200:
+                                error_text = await response.aread()
+                                logger.error(f"NVIDIA API error: {error_text}")
+                                yield f"Error: API returned status {response.status_code}"
+                                return
 
-                        async for line in response.aiter_lines():
-                            if line.startswith("data: "):
-                                data = line[6:]  # Remove "data: " prefix
-                                if data == "[DONE]":
-                                    break
-                                try:
-                                    import json
-                                    chunk = json.loads(data)
-                                    if "choices" in chunk and len(chunk["choices"]) > 0:
-                                        delta = chunk["choices"][0].get("delta", {})
-                                        content = delta.get("content", "")
-                                        if content:
-                                            yield content
-                                except json.JSONDecodeError:
-                                    continue
+                            async for line in response.aiter_lines():
+                                if line.startswith("data: "):
+                                    data = line[6:]  # Remove "data: " prefix
+                                    if data == "[DONE]":
+                                        break
+                                    try:
+                                        import json
+                                        chunk = json.loads(data)
+                                        if "choices" in chunk and len(chunk["choices"]) > 0:
+                                            delta = chunk["choices"][0].get("delta", {})
+                                            content = delta.get("content", "")
+                                            if content:
+                                                yield content
+                                    except json.JSONDecodeError:
+                                        continue
+                    except httpx.RemoteProtocolError as e:
+                        logger.error(f"Remote protocol error: {str(e)}")
+                        yield f"Error: Connection interrupted - {str(e)}"
+                    except Exception as stream_error:
+                        logger.error(f"Stream error: {str(stream_error)}")
+                        yield f"Error: {str(stream_error)}"
                 else:
                     response = await client.post(
                         self.base_url,

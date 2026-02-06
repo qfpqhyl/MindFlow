@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
         settings: {
           default_email: email || null,
           reminder_enabled: true,
-          default_model_id: null
+          default_model_id: 'minimaxai/minimax-m2.1'
         }
       };
 

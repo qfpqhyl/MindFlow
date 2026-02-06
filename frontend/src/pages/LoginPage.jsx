@@ -92,7 +92,7 @@ const LoginPage = () => {
             MindFlow
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            智能工作流应用
+            思流如潮
           </Typography>
         </Box>
 

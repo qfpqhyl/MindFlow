@@ -81,5 +81,5 @@ async def get_user_settings(user_id: str) -> dict:
             return {
                 "default_email": None,
                 "reminder_enabled": True,
-                "default_model_id": None
+                "default_model_id": "minimaxai/minimax-m2.1"
             }

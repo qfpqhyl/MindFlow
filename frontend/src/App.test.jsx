@@ -16,7 +16,7 @@ function App() {
         MindFlow
       </h1>
       <p style={{ fontSize: '1.25rem', color: '#666666' }}>
-        智能工作流应用
+        思流如潮
       </p>
       <div style={{ marginTop: '2rem', padding: '1rem', border: '1px solid #E0E0E0' }}>
         <p>前端正在运行...</p>

@@ -9,32 +9,25 @@ from datetime import datetime
 
 router = APIRouter(prefix="/ai", tags=["AI Configuration"])
 
-# Available NVIDIA models
+# Available AI models
 AVAILABLE_MODELS = [
     {
-        "id": "meta/llama-3.1-405b-instruct",
-        "name": "Llama 3.1 405B Instruct",
-        "provider": "nvidia"
+        "id": "z-ai/glm4.7",
+        "name": "智谱 GLM-4.7",
+        "provider": "z-ai",
+        "description": "智谱 AI 最新发布的 GLM-4.7 模型"
     },
     {
-        "id": "meta/llama-3.1-70b-instruct",
-        "name": "Llama 3.1 70B Instruct",
-        "provider": "nvidia"
+        "id": "minimaxai/minimax-m2.1",
+        "name": "MiniMax M2.1",
+        "provider": "minimaxai",
+        "description": "MiniMax AI 的 M2.1 模型"
     },
     {
-        "id": "meta/llama-3.1-8b-instruct",
-        "name": "Llama 3.1 8B Instruct",
-        "provider": "nvidia"
-    },
-    {
-        "id": "mistralai/mistral-large",
-        "name": "Mistral Large",
-        "provider": "nvidia"
-    },
-    {
-        "id": "google/gemma-2-27b-it",
-        "name": "Gemma 2 27B IT",
-        "provider": "nvidia"
+        "id": "moonshotai/kimi-k2.5",
+        "name": "Kimi K2.5",
+        "provider": "moonshotai",
+        "description": "Moonshot AI 的 Kimi K2.5 模型"
     }
 ]
 

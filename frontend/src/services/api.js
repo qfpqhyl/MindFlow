@@ -79,6 +79,7 @@ export const messagesAPI = {
     const decoder = new TextDecoder();
     let buffer = '';
     let hasError = false;
+    let hasCompleted = false;
 
     try {
       while (true) {
@@ -92,6 +93,9 @@ export const messagesAPI = {
         for (const line of lines) {
           if (line.startsWith('event: ')) {
             const event = line.slice(7).trim();
+            if (event === 'complete') {
+              hasCompleted = true;
+            }
             continue;
           }
           if (line.startsWith('data: ')) {
@@ -101,18 +105,25 @@ export const messagesAPI = {
               if (parsed.content && onChunk) {
                 onChunk(parsed.content);
               } else if (parsed.message_id && onComplete) {
+                hasCompleted = true;
                 onComplete(parsed);
               } else if (parsed.message && onError) {
                 onError(parsed.message);
                 hasError = true;
               }
             } catch (e) {
-              console.error('Failed to parse SSE data:', e);
+              console.error('Failed to parse SSE data:', e, data);
             }
           }
         }
       }
+
+      // If stream ended without error but no complete event, trigger completion
+      if (!hasError && !hasCompleted && onComplete) {
+        onComplete({ message_id: null, created_at: new Date().toISOString() });
+      }
     } catch (error) {
+      console.error('Stream error:', error);
       if (onError && !hasError) {
         onError(error.message);
       }

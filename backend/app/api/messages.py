@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from app.schemas import MessageCreate, MessageResponse, MessageSendResponse, APIResponse
 from app.database import db
 from app.ai_service import nvidia_service
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_user_settings
 from typing import Optional
 from datetime import datetime
 import json
@@ -118,9 +118,13 @@ async def send_message_stream(
     async def stream_generator():
         """Generate SSE stream"""
         try:
-            # Stream AI response
+            # Get user's preferred model
+            user_settings = await get_user_settings(current_user["user_id"])
+            user_model = user_settings.get("default_model_id") or "minimaxai/minimax-m2.1"
+
+            # Stream AI response with user's preferred model
             ai_response = ""
-            async for chunk in nvidia_service.chat(messages, stream=True):
+            async for chunk in nvidia_service.chat(messages, model=user_model, stream=True):
                 if chunk.startswith("Error:"):
                     # Handle error
                     yield f"event: error\ndata: {json.dumps({'message': chunk})}\n\n"
@@ -207,14 +211,18 @@ async def send_message(
             for msg in cursor.fetchall()
         ]
 
+    # Get user's preferred model
+    user_settings = await get_user_settings(current_user["user_id"])
+    user_model = user_settings.get("default_model_id") or "minimaxai/minimax-m2.1"
+
     # Get AI response
     ai_response = ""
     if message_data.stream:
         # Streaming response (would need SSE implementation)
-        async for chunk in nvidia_service.chat(messages):
+        async for chunk in nvidia_service.chat(messages, model=user_model):
             ai_response += chunk
     else:
-        async for chunk in nvidia_service.chat(messages, stream=False):
+        async for chunk in nvidia_service.chat(messages, model=user_model, stream=False):
             ai_response += chunk
 
     # Save assistant message
