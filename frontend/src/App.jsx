@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import theme from './theme';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
+import GithubCallbackPage from './pages/GithubCallbackPage';
 import ConversationsPage from './pages/ConversationsPage';
 import ChatPage from './pages/ChatPage';
 import DocumentsPage from './pages/DocumentsPage';
@@ -33,6 +34,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/github/success" element={<GithubCallbackPage />} />
 
             {/* Protected Routes */}
             <Route

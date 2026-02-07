@@ -25,6 +25,7 @@ async def get_user_me(current_user: dict = Depends(get_current_user)):
             "user_id": current_user["user_id"],
             "username": current_user["username"],
             "email": current_user["email"],
+            "avatar_url": current_user.get("avatar_url"),
             "created_at": current_user["created_at"],
             "settings": settings
         }

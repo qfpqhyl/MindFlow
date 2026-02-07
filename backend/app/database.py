@@ -40,7 +40,9 @@ class Database:
                     user_id TEXT PRIMARY KEY,
                     username TEXT UNIQUE NOT NULL,
                     email TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
+                    password_hash TEXT,
+                    github_id TEXT UNIQUE,
+                    avatar_url TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );

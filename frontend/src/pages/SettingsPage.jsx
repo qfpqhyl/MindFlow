@@ -30,11 +30,6 @@ const SettingsPage = () => {
     username: '',
     email: '',
   });
-  const [passwordData, setPasswordData] = useState({
-    old_password: '',
-    new_password: '',
-    confirm_password: '',
-  });
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -68,18 +63,6 @@ const SettingsPage = () => {
     } else {
       setMessage(result.error);
     }
-    setTimeout(() => setMessage(''), 3000);
-  };
-
-  const handleChangePassword = async () => {
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      setMessage('新密码不匹配');
-      setTimeout(() => setMessage(''), 3000);
-      return;
-    }
-
-    // TODO: Implement password change API call
-    setMessage('密码修改功能待实现');
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -127,7 +110,9 @@ const SettingsPage = () => {
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Avatar
-              sx={{ width: 80, height: 80, mr: 3, bgcolor: 'primary.main', fontSize: '2rem' }}
+              sx={{ width: 80, height: 80, mr: 3 }}
+              src={user.avatar_url}
+              alt={user.username}
             >
               {user.username?.charAt(0).toUpperCase()}
             </Avatar>
@@ -210,45 +195,6 @@ const SettingsPage = () => {
           <Button variant="outlined" disabled>
             修改邮件设置（待实现）
           </Button>
-        </CardContent>
-      </Card>
-
-      {/* Change Password */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            修改密码
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 400 }}>
-            <TextField
-              fullWidth
-              label="当前密码"
-              type="password"
-              value={passwordData.old_password}
-              onChange={(e) => setPasswordData({ ...passwordData, old_password: e.target.value })}
-            />
-            <TextField
-              fullWidth
-              label="新密码"
-              type="password"
-              value={passwordData.new_password}
-              onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-            />
-            <TextField
-              fullWidth
-              label="确认新密码"
-              type="password"
-              value={passwordData.confirm_password}
-              onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-            />
-            <Button
-              variant="contained"
-              onClick={handleChangePassword}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              修改密码
-            </Button>
-          </Box>
         </CardContent>
       </Card>
 

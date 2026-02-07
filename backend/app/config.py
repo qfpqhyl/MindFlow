@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     # Task Scheduler
     scheduler_check_interval_minutes: int = 5
 
+    # GitHub OAuth
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    github_oauth_redirect_uri: str = "http://localhost:8000/api/v1/auth/github/callback"
+    github_oauth_frontend_success_url: str = "http://localhost:5173/auth/github/success"
+
     class Config:
         env_file = ".env"
         case_sensitive = False

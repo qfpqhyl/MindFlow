@@ -40,7 +40,7 @@ async def get_current_user(
     # Fetch user from database
     with db.get_connection() as conn:
         cursor = conn.execute(
-            "SELECT user_id, username, email, created_at FROM users WHERE user_id = ?",
+            "SELECT user_id, username, email, created_at, avatar_url FROM users WHERE user_id = ?",
             (user_id,)
         )
         user = cursor.fetchone()

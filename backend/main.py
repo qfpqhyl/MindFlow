@@ -102,12 +102,13 @@ async def root():
 
 
 # Import and register routers
-from app.api import auth, conversations, messages, organize, documents, tasks, users, emails, ai
+from app.api import auth, conversations, messages, organize, documents, tasks, users, emails, ai, github_auth
 
 # Register routers with API v1 prefix
 api_prefix = settings.api_v1_prefix
 
 app.include_router(auth.router, prefix=api_prefix, tags=["Authentication"])
+app.include_router(github_auth.router, prefix=api_prefix, tags=["GitHub OAuth"])
 app.include_router(conversations.router, prefix=api_prefix, tags=["Conversations"])
 app.include_router(messages.router, prefix=api_prefix, tags=["Messages"])
 app.include_router(organize.router, prefix=api_prefix, tags=["Organize"])

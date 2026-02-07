@@ -13,6 +13,7 @@ import {
   Typography,
   IconButton,
   Divider,
+  Avatar,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -105,12 +106,20 @@ const Layout = () => {
       </List>
 
       <Box sx={{ p: 3, borderTop: '1px solid #E0E0E0' }}>
-        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-          {user?.username}
-        </Typography>
-        <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.7rem' }}>
-          {user?.email}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar
+            sx={{ width: 40, height: 40, mr: 2 }}
+            src={user?.avatar_url}
+            alt={user?.username}
+          >
+            {user?.username?.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.username}
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
