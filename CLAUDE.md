@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MindFlow is an intelligent workflow application that integrates AI chat, knowledge management, and task reminders. It's built as a full-stack application with:
 
-- **Backend**: FastAPI with SQLite database
-- **Frontend**: React 18 with Vite and MUI v6
-- **AI**: NVIDIA Llama 3.1 models via API
+- **Backend**: FastAPI 0.115.0 with SQLite database
+- **Frontend**: React 19.2 with Vite 7.2 and MUI v7
+- **AI**: NVIDIA/MiniMax API integration (default: `minimaxai/minimax-m2.1`)
 - **Email**: Feishu SMTP integration for task reminders
 
 ## Architecture
@@ -41,7 +41,7 @@ backend/
 
 ### Frontend Structure
 
-The frontend uses React Router v6 with a protected route pattern:
+The frontend uses React Router v7 with a protected route pattern:
 
 ```
 frontend/src/
@@ -49,12 +49,19 @@ frontend/src/
 ├── App.jsx                 # Router configuration with ProtectedRoute wrapper
 ├── theme.js                # MUI theme (black/white minimalist design)
 ├── components/
-│   └── Layout.jsx          # Main app layout with navigation
+│   ├── Layout.jsx          # Main app layout with navigation
+│   └── MarkdownRenderer.jsx  # Markdown rendering with syntax highlighting
 ├── contexts/
 │   └── AuthContext.jsx     # Authentication state and token management
 ├── services/
 │   └── api.js              # Axios instance with interceptors + API functions
 └── pages/                  # Page components (ConversationsPage, ChatPage, etc.)
+    ├── ChatPage.jsx         # Chat interface with streaming and markdown
+    ├── ConversationsPage.jsx # Conversation list and management
+    ├── DocumentsPage.jsx    # Document viewing and search
+    ├── LoginPage.jsx        # Authentication (login/register)
+    ├── SettingsPage.jsx     # User settings and AI model selection
+    └── TasksPage.jsx        # Task management with due dates
 ```
 
 **Key patterns:**
@@ -62,7 +69,8 @@ frontend/src/
 - Axios interceptors auto-inject JWT and handle 401 redirects
 - Protected routes check `isAuthenticated` from AuthContext
 - SSE streaming for AI responses via `messagesAPI.sendStream()`
-- MUI components with custom black/white theme
+- MUI v7 components with custom black/white theme
+- Markdown rendering with `react-markdown` and syntax highlighting
 
 ### Database Schema
 
@@ -136,19 +144,41 @@ Start backend on port 8000, then frontend on port 5173. Vite proxy handles `/api
 ### Required Environment Variables (.env in backend/)
 
 ```env
-# NVIDIA API - REQUIRED for AI chat
+# Database
+DB_FILE=./data/mindflow.db
+
+# API Settings
+API_HOST=0.0.0.0
+API_PORT=8000
+API_V1_PREFIX=/api/v1
+
+# JWT Settings
+SECRET_KEY=your-secret-key-change-this-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# NVIDIA/MiniMax API - REQUIRED for AI chat
 NVIDIA_API_KEY=your-nvidia-api-key
+NVIDIA_API_BASE_URL=https://integrate.api.nvidia.com/v1/chat/completions
+DEFAULT_MODEL=minimaxai/minimax-m2.1
 
 # Email - Optional (for task reminders)
+SMTP_HOST=smtp.feishu.cn
+SMTP_PORT=465
 SMTP_USERNAME=your-email@feishu.cn
 SMTP_PASSWORD=your-smtp-password
 EMAIL_FROM=your-email@feishu.cn
 
-# JWT - Change in production
-SECRET_KEY=your-secret-key-change-this-in-production
+# CORS
+CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
+
+# Task Scheduler
+SCHEDULER_CHECK_INTERVAL_MINUTES=5
 ```
 
 Get NVIDIA API key from https://build.nvidia.com
+Available models include MiniMax M2.1, Llama 3.1 405B, and others via NVIDIA API.
 
 ### Frontend Configuration
 
@@ -160,16 +190,17 @@ Get NVIDIA API key from https://build.nvidia.com
 
 ### AI Service (`app/ai_service.py`)
 
-- Wraps NVIDIA API for chat completions
+- Wraps NVIDIA/MiniMax API for chat completions
 - Supports streaming responses via async generator
 - System prompt: "You are a helpful AI assistant."
 - Returns chunks prefixed with content markers
+- Additional helper methods: `generate_summary()`, `generate_document()`, `suggest_tags()`
 
 ### Streaming SSE Implementation
 
 Backend (`app/api/messages.py`):
 - Generates Server-Sent Events for AI streaming
-- Events: `chunk`, `reasoning`, `complete`, `error`
+- Events: `chunk`, `error`, `complete`
 - Uses `yield` to send events asynchronously
 
 Frontend (`services/api.js`):
@@ -197,6 +228,30 @@ Frontend (`services/api.js`):
 - `/api/v1/organize/to-document` endpoint converts conversations to documents
 - AI generates summary and tags automatically
 - Links to source conversation via `source_conversation_id`
+
+### AI Model Configuration
+
+- `/api/v1/ai/models` endpoint lists available AI models
+- Users can set default model via `/api/v1/ai/set-default`
+- Model preference stored in `user_settings` table
+- Frontend SettingsPage allows model selection UI
+- Supported models: MiniMax M2.1, Llama 3.1 405B, and other NVIDIA-hosted models
+
+### API Endpoints Structure
+
+All routes use `/api/v1` prefix. Main endpoint groups:
+
+- **Authentication** (`/auth/*`): register, login, refresh token
+- **Conversations** (`/conversations`): CRUD operations for chat conversations
+- **Messages** (`/conversations/{id}/messages`): send messages, stream responses
+- **Documents** (`/documents`): create, view, search, and delete documents
+- **Tasks** (`/tasks`): create, update, complete tasks, send reminders
+- **Organize** (`/organize/*`): convert conversations to documents, get suggestions
+- **AI** (`/ai/*`): list available models, set user's default model
+- **Users** (`/users/*`): get user profile, update settings
+- **Email Notifications** (`/emails`): view email notification history
+
+Interactive API documentation available at `/docs` (Swagger UI) when running backend.
 
 ## Testing
 
@@ -233,6 +288,7 @@ SQLite database at `backend/data/mindflow.db` - backup this file regularly.
 - **Frontend can't reach backend**: Ensure backend is running on port 8000
 - **Database errors**: Delete `mindflow.db` and restart to reinitialize
 - **CORS errors**: Check `CORS_ORIGINS` in backend config
+- **AI model not responding**: Verify `DEFAULT_MODEL` is supported by NVIDIA API
 
 ## Adding New Features
 
