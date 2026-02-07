@@ -89,6 +89,15 @@ const theme = createTheme({
     '0 3px 12px rgba(0,0,0,0.15)',
     '0 6px 24px rgba(0,0,0,0.18)',
     '0 12px 48px rgba(0,0,0,0.20)',
+    '0 17px 60px rgba(0,0,0,0.22)',
+    '0 24px 80px rgba(0,0,0,0.24)',
+    // Generate remaining shadows up to 24
+    ...Array.from({ length: 17 }, (_, i) => {
+      const level = i + 9;
+      const baseBlur = 12 + level * 4;
+      const baseOpacity = 0.15 + (level * 0.02);
+      return `0 ${level}px ${baseBlur}px rgba(0,0,0,${Math.min(baseOpacity, 0.5).toFixed(2)})`;
+    }),
   ],
   components: {
     MuiCssBaseline: {

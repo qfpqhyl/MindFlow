@@ -1,0 +1,28 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 - 可选，如果需要透明背景删除此行 -->
+  <!-- <rect width="200" height="200" fill="#ffffff"/> -->
+
+  <!-- 外圈 - 代表完整性和包容 -->
+  <circle cx="100" cy="100" r="90" stroke="black" stroke-width="2" fill="none"/>
+
+  <!-- 内部流动的线条 - 代表思维流动 -->
+  <!-- 第一条曲线 -->
+  <path d="M 40 100 Q 70 60, 100 100 T 160 100" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- 第二条曲线 - 与第一条交错 -->
+  <path d="M 40 100 Q 70 140, 100 100 T 160 100" stroke="black" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- 第三条曲线 - 中间主线 -->
+  <path d="M 40 100 L 160 100" stroke="black" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- 中心点 - 代表核心智能 -->
+  <circle cx="100" cy="100" r="8" fill="black"/>
+
+  <!-- 装饰性小点 - 代表灵感和创意 -->
+  <circle cx="70" cy="75" r="3" fill="black"/>
+  <circle cx="130" cy="75" r="3" fill="black"/>
+  <circle cx="100" cy="125" r="3" fill="black"/>
+
+  <!-- 箭头 - 代表流动方向 -->
+  <path d="M 155 100 L 160 100 L 158 95" stroke="black" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

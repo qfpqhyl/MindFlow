@@ -89,7 +89,7 @@ const ConversationsPage = () => {
         </Typography>
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6].map((item) => (
-            <Grid item xs={12} sm={6} md={4} key={item}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item}>
               <Skeleton variant="rectangular" height={200} />
             </Grid>
           ))}
@@ -134,7 +134,7 @@ const ConversationsPage = () => {
       ) : (
         <Grid container spacing={2}>
           {filteredConversations.map((conversation) => (
-            <Grid item xs={12} sm={6} md={4} key={conversation.conversation_id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={conversation.conversation_id}>
               <Card
                 sx={{
                   height: '100%',

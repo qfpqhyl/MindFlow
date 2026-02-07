@@ -9,6 +9,7 @@ from app.database import db
 from app.ai_service import nvidia_service
 from app.dependencies import get_current_user
 from datetime import datetime
+import asyncio
 
 router = APIRouter(prefix="/organize", tags=["Organize"])
 
@@ -59,16 +60,27 @@ async def organize_to_document(
                 detail="Conversation has no messages"
             )
 
-    # Generate summary if not provided
+    # Generate summary, content, and tags in parallel for better performance
     summary = organize_data.summary
     if not summary:
-        summary = await nvidia_service.generate_summary(messages)
+        # Parallel generation: summary, content, and tags
+        tasks = [
+            nvidia_service.generate_summary(messages),
+            nvidia_service.generate_document(messages, organize_data.title),
+        ]
 
-    # Generate document content
-    content = await nvidia_service.generate_document(messages, organize_data.title)
+        results = await asyncio.gather(*tasks)
+        summary = results[0]
+        content = results[1]
 
-    # Generate tags
-    tags = await nvidia_service.suggest_tags(content)
+        # Generate tags based on content (can be done in parallel but depends on content)
+        tags = await nvidia_service.suggest_tags(content)
+    else:
+        # Only generate content and tags
+        content, tags = await asyncio.gather(
+            nvidia_service.generate_document(messages, organize_data.title),
+            nvidia_service.suggest_tags(summary)
+        )
 
     # Create document
     document_id = db.generate_uuid()

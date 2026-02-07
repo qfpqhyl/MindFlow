@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -9,14 +10,9 @@ import {
   TextField,
   Grid,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   Menu,
   MenuItem,
-  Divider,
 } from '@mui/material';
 import {
   Add,
@@ -25,25 +21,17 @@ import {
   Edit,
   Delete,
   Label,
+  Visibility,
 } from '@mui/icons-material';
 import { documentsAPI } from '../services/api';
-import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const DocumentsPage = () => {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [openDialog, setOpenDialog] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [openViewDialog, setOpenViewDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    summary: '',
-    tags: '',
-  });
 
   useEffect(() => {
     fetchDocuments();
@@ -61,48 +49,6 @@ const DocumentsPage = () => {
     }
   };
 
-  const handleCreateDocument = async () => {
-    try {
-      const tags = formData.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-      await documentsAPI.create({
-        ...formData,
-        tags,
-      });
-      setOpenDialog(false);
-      setFormData({ title: '', content: '', summary: '', tags: '' });
-      fetchDocuments();
-    } catch (error) {
-      console.error('Failed to create document:', error);
-    }
-  };
-
-  const handleEditDocument = async () => {
-    try {
-      const tags = formData.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-      await documentsAPI.update(selectedDoc.document_id, {
-        ...formData,
-        tags,
-      });
-      setIsEditDialogOpen(false);
-      setSelectedDoc(null);
-      setFormData({ title: '', content: '', summary: '', tags: '' });
-      fetchDocuments();
-    } catch (error) {
-      console.error('Failed to update document:', error);
-    }
-  };
-
-  const handleOpenEditDialog = (doc) => {
-    setSelectedDoc(doc);
-    setFormData({
-      title: doc.title,
-      content: doc.content,
-      summary: doc.summary || '',
-      tags: doc.tags ? doc.tags.join(', ') : '',
-    });
-    setIsEditDialogOpen(true);
-  };
-
   const handleDeleteDocument = async (id, e) => {
     e.stopPropagation();
     if (window.confirm('确定要删除这个文档吗？')) {
@@ -116,6 +62,7 @@ const DocumentsPage = () => {
   };
 
   const handleMenuOpen = (event, doc) => {
+    event.stopPropagation();
     setAnchorEl(event.currentTarget);
     setSelectedDoc(doc);
   };
@@ -123,11 +70,6 @@ const DocumentsPage = () => {
   const handleCloseMenu = () => {
     setAnchorEl(null);
     setSelectedDoc(null);
-  };
-
-  const handleViewDocument = (doc) => {
-    setSelectedDoc(doc);
-    setOpenViewDialog(true);
   };
 
   const filteredDocuments = documents.filter((doc) =>
@@ -139,7 +81,7 @@ const DocumentsPage = () => {
     <Container maxWidth="lg">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4">文档</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpenDialog(true)}>
+        <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/documents/new')}>
           新建文档
         </Button>
       </Box>
@@ -155,19 +97,28 @@ const DocumentsPage = () => {
         sx={{ mb: 4 }}
       />
 
-      {filteredDocuments.length === 0 ? (
+      {loading ? (
+        <Box sx={{ textAlign: 'center', py: 12 }}>
+          <Typography>加载中...</Typography>
+        </Box>
+      ) : filteredDocuments.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 12 }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             {searchQuery ? '没有找到匹配的文档' : '还没有文档'}
           </Typography>
-          <Typography variant="body2" color="text.disabled">
+          <Typography variant="body2" color="text.disabled" sx={{ mb: 3 }}>
             {searchQuery ? '尝试其他关键词' : '从对话中整理或手动创建文档'}
           </Typography>
+          {!searchQuery && (
+            <Button variant="outlined" startIcon={<Add />} onClick={() => navigate('/documents/new')}>
+              创建第一个文档
+            </Button>
+          )}
         </Box>
       ) : (
         <Grid container spacing={2}>
           {filteredDocuments.map((doc) => (
-            <Grid item xs={12} sm={6} md={4} key={doc.document_id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={doc.document_id}>
               <Card
                 sx={{
                   height: '100%',
@@ -175,15 +126,28 @@ const DocumentsPage = () => {
                   flexDirection: 'column',
                   position: 'relative',
                   cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  border: '1px solid transparent',
                   '&:hover': {
                     boxShadow: 3,
+                    borderColor: 'primary.main',
+                    transform: 'translateY(-2px)',
                   },
                 }}
-                onClick={() => handleViewDocument(doc)}
+                onClick={() => navigate(`/documents/${doc.document_id}`)}
               >
                 <CardContent sx={{ flex: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, pr: 6 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 600,
+                        pr: 6,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {doc.title}
                     </Typography>
                     <IconButton
@@ -205,6 +169,7 @@ const DocumentsPage = () => {
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
+                        lineHeight: 1.6,
                       }}
                     >
                       {doc.summary}
@@ -236,153 +201,19 @@ const DocumentsPage = () => {
         </Grid>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>新建文档</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="标题"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            sx={{ mt: 2, mb: 2 }}
-            autoFocus
-          />
-          <TextField
-            fullWidth
-            label="摘要"
-            value={formData.summary}
-            onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-            sx={{ mb: 2 }}
-            multiline
-            rows={2}
-          />
-          <TextField
-            fullWidth
-            label="内容"
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            sx={{ mb: 2 }}
-            multiline
-            rows={6}
-            placeholder="支持 Markdown 格式"
-          />
-          <TextField
-            fullWidth
-            label="标签"
-            value={formData.tags}
-            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-            helperText="多个标签用逗号分隔"
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenDialog(false)}>取消</Button>
-          <Button variant="contained" onClick={handleCreateDocument}>
-            创建
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>编辑文档</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="标题"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            sx={{ mt: 2, mb: 2 }}
-            autoFocus
-          />
-          <TextField
-            fullWidth
-            label="摘要"
-            value={formData.summary}
-            onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-            sx={{ mb: 2 }}
-            multiline
-            rows={2}
-          />
-          <TextField
-            fullWidth
-            label="内容"
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            sx={{ mb: 2 }}
-            multiline
-            rows={6}
-            placeholder="支持 Markdown 格式"
-          />
-          <TextField
-            fullWidth
-            label="标签"
-            value={formData.tags}
-            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-            helperText="多个标签用逗号分隔"
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenEditDialog(false)}>取消</Button>
-          <Button variant="contained" onClick={handleEditDocument}>
-            保存
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* View Document Dialog */}
-      <Dialog
-        open={openViewDialog}
-        onClose={() => setOpenViewDialog(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6">{selectedDoc?.title}</Typography>
-            <IconButton onClick={() => setOpenViewDialog(false)}>
-              <MoreVert />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          {selectedDoc?.summary && (
-            <>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                摘要
-              </Typography>
-              <Typography variant="body2" paragraph>
-                {selectedDoc.summary}
-              </Typography>
-              <Divider sx={{ my: 2 }} />
-            </>
-          )}
-          <MarkdownRenderer content={selectedDoc?.content || '无内容'} />
-          {selectedDoc?.tags && selectedDoc.tags.length > 0 && (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 2 }}>
-                {selectedDoc.tags.map((tag, index) => (
-                  <Chip
-                    key={index}
-                    label={tag}
-                    size="small"
-                    variant="outlined"
-                    icon={<Label sx={{ fontSize: 14 }} />}
-                    sx={{ borderRadius: 0 }}
-                  />
-                ))}
-              </Box>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Context Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu}>
         <MenuItem
           onClick={() => {
-            handleOpenEditDialog(selectedDoc);
+            navigate(`/documents/${selectedDoc?.document_id}`);
+            handleCloseMenu();
+          }}
+        >
+          <Visibility sx={{ mr: 1 }} /> 查看
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            navigate(`/documents/${selectedDoc?.document_id}/edit`);
             handleCloseMenu();
           }}
         >

@@ -1,0 +1,18 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 外圈 -->
+  <circle cx="24" cy="24" r="20" stroke="black" stroke-width="1.5" fill="none"/>
+
+  <!-- 思维流动线条 -->
+  <path d="M 10 24 Q 17 18, 24 24 T 38 24" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 10 24 Q 17 30, 24 24 T 38 24" stroke="black" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- 中心点 -->
+  <circle cx="24" cy="24" r="3" fill="black"/>
+
+  <!-- 装饰点 -->
+  <circle cx="17" cy="19" r="1.5" fill="black"/>
+  <circle cx="31" cy="19" r="1.5" fill="black"/>
+
+  <!-- 箭头 -->
+  <path d="M 35 24 L 38 24 L 37 21" stroke="black" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 简化版小图标 -->
+  <circle cx="16" cy="16" r="14" stroke="black" stroke-width="1.5" fill="none"/>
+  <path d="M 7 16 Q 11 12, 16 16 T 25 16" stroke="black" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 7 16 Q 11 20, 16 16 T 25 16" stroke="black" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <circle cx="16" cy="16" r="2" fill="black"/>
+</svg>

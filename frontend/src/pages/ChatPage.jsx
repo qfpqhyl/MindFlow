@@ -28,6 +28,7 @@ import {
   Description,
   TaskAlt,
 } from '@mui/icons-material';
+import { CircularProgress } from '@mui/material';
 import { conversationsAPI, messagesAPI, organizeAPI } from '../services/api';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 
@@ -39,6 +40,7 @@ const ChatPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [organizing, setOrganizing] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -171,26 +173,51 @@ const ChatPage = () => {
   };
 
   const handleOrganize = async () => {
+    // 防止重复点击
+    if (organizing) return;
+
     try {
+      setOrganizing(true);
+      handleCloseMenu();
+
+      // 显示提示消息
+      setSnackbar({
+        open: true,
+        message: '正在整理对话为文档，请稍候...',
+        severity: 'info',
+      });
+
       const response = await organizeAPI.toDocument({
         conversation_id: conversationId,
         title: conversation?.title || '未命名对话',
         create_task: false,
       });
 
+      const documentId = response.data.data.document_id;
+
       setSnackbar({
         open: true,
-        message: `已创建文档：${response.data.data.document_id.slice(0, 8)}...`,
+        message: '文档创建成功！正在跳转...',
         severity: 'success',
       });
-      handleCloseMenu();
+
+      // 延迟跳转，让用户看到成功消息
+      setTimeout(() => {
+        navigate(`/documents/${documentId}`);
+      }, 1500);
     } catch (error) {
       console.error('Failed to organize:', error);
+
+      // 更详细的错误信息
+      const errorMessage = error.response?.data?.message || error.message || '整理失败，请重试';
+
       setSnackbar({
         open: true,
-        message: '整理失败，请重试',
+        message: `整理失败：${errorMessage}`,
         severity: 'error',
       });
+    } finally {
+      setOrganizing(false);
     }
   };
 
@@ -267,10 +294,22 @@ const ChatPage = () => {
           <MenuItem onClick={() => { handleCloseMenu(); navigate(`/conversations/${conversationId}/edit`); }}>
             <Edit sx={{ mr: 1 }} /> 编辑标题
           </MenuItem>
-          <MenuItem onClick={handleOrganize}>
-            <Description sx={{ mr: 1 }} /> 整理为文档
+          <MenuItem
+            onClick={handleOrganize}
+            disabled={organizing || sending}
+          >
+            {organizing ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                整理中...
+              </>
+            ) : (
+              <>
+                <Description sx={{ mr: 1 }} /> 整理为文档
+              </>
+            )}
           </MenuItem>
-          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }} disabled={organizing || sending}>
             <Delete sx={{ mr: 1 }} /> 删除对话
           </MenuItem>
         </Menu>

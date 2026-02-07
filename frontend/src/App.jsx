@@ -8,6 +8,8 @@ import LoginPage from './pages/LoginPage';
 import ConversationsPage from './pages/ConversationsPage';
 import ChatPage from './pages/ChatPage';
 import DocumentsPage from './pages/DocumentsPage';
+import DocumentViewPage from './pages/DocumentViewPage';
+import DocumentEditPage from './pages/DocumentEditPage';
 import TasksPage from './pages/TasksPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -45,6 +47,8 @@ function App() {
               <Route path="conversations" element={<ConversationsPage />} />
               <Route path="conversations/:conversationId" element={<ChatPage />} />
               <Route path="documents" element={<DocumentsPage />} />
+              <Route path="documents/:documentId" element={<DocumentViewPage />} />
+              <Route path="documents/:documentId/edit" element={<DocumentEditPage />} />
               <Route path="tasks" element={<TasksPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

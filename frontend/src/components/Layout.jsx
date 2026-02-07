@@ -23,6 +23,7 @@ import {
   Logout,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import logoSvg from '/logo.svg';
 
 const DRAWER_WIDTH = 280;
 
@@ -50,8 +51,18 @@ const Layout = () => {
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Toolbar sx={{ borderBottom: '1px solid #E0E0E0' }}>
-        <Typography variant="h6" component="div" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+      <Toolbar sx={{ borderBottom: '1px solid #E0E0E0', py: 2 }}>
+        <Box
+          component="img"
+          src={logoSvg}
+          alt="MindFlow Logo"
+          sx={{
+            height: 28,
+            width: 'auto',
+            mr: 1.5,
+          }}
+        />
+        <Typography variant="h6" component="div" sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>
           MindFlow
         </Typography>
       </Toolbar>
