@@ -49,6 +49,7 @@ function App() {
               <Route path="conversations" element={<ConversationsPage />} />
               <Route path="conversations/:conversationId" element={<ChatPage />} />
               <Route path="documents" element={<DocumentsPage />} />
+              <Route path="documents/new" element={<DocumentEditPage />} />
               <Route path="documents/:documentId" element={<DocumentViewPage />} />
               <Route path="documents/:documentId/edit" element={<DocumentEditPage />} />
               <Route path="tasks" element={<TasksPage />} />

@@ -42,10 +42,10 @@ const DocumentEditPage = () => {
   });
 
   useEffect(() => {
-    if (!isNew) {
+    if (!isNew && documentId) {
       fetchDocument();
     }
-  }, [documentId]);
+  }, [isNew, documentId]);
 
   const fetchDocument = async () => {
     try {
@@ -82,7 +82,7 @@ const DocumentEditPage = () => {
       setSaving(true);
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
 
-      if (isNew) {
+      if (isNew || !documentId) {
         await documentsAPI.create({
           title,
           content,
