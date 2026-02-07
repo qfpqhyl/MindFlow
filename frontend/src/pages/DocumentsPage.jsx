@@ -16,6 +16,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Divider,
 } from '@mui/material';
 import {
   Add,
@@ -33,6 +34,7 @@ const DocumentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -72,6 +74,33 @@ const DocumentsPage = () => {
     } catch (error) {
       console.error('Failed to create document:', error);
     }
+  };
+
+  const handleEditDocument = async () => {
+    try {
+      const tags = formData.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+      await documentsAPI.update(selectedDoc.document_id, {
+        ...formData,
+        tags,
+      });
+      setIsEditDialogOpen(false);
+      setSelectedDoc(null);
+      setFormData({ title: '', content: '', summary: '', tags: '' });
+      fetchDocuments();
+    } catch (error) {
+      console.error('Failed to update document:', error);
+    }
+  };
+
+  const handleOpenEditDialog = (doc) => {
+    setSelectedDoc(doc);
+    setFormData({
+      title: doc.title,
+      content: doc.content,
+      summary: doc.summary || '',
+      tags: doc.tags ? doc.tags.join(', ') : '',
+    });
+    setIsEditDialogOpen(true);
   };
 
   const handleDeleteDocument = async (id, e) => {
@@ -254,6 +283,53 @@ const DocumentsPage = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>编辑文档</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="标题"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            sx={{ mt: 2, mb: 2 }}
+            autoFocus
+          />
+          <TextField
+            fullWidth
+            label="摘要"
+            value={formData.summary}
+            onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+            sx={{ mb: 2 }}
+            multiline
+            rows={2}
+          />
+          <TextField
+            fullWidth
+            label="内容"
+            value={formData.content}
+            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+            sx={{ mb: 2 }}
+            multiline
+            rows={6}
+            placeholder="支持 Markdown 格式"
+          />
+          <TextField
+            fullWidth
+            label="标签"
+            value={formData.tags}
+            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+            helperText="多个标签用逗号分隔"
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenEditDialog(false)}>取消</Button>
+          <Button variant="contained" onClick={handleEditDocument}>
+            保存
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* View Document Dialog */}
       <Dialog
         open={openViewDialog}
@@ -304,7 +380,12 @@ const DocumentsPage = () => {
 
       {/* Context Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu}>
-        <MenuItem onClick={handleCloseMenu}>
+        <MenuItem
+          onClick={() => {
+            handleOpenEditDialog(selectedDoc);
+            handleCloseMenu();
+          }}
+        >
           <Edit sx={{ mr: 1 }} /> 编辑
         </MenuItem>
         <MenuItem

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Box, useTheme } from '@mui/material';
+import { Box, useTheme, Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const StyledMarkdown = styled(Box)(({ theme }) => ({
   '& h1': {
@@ -133,12 +134,121 @@ const StyledMarkdown = styled(Box)(({ theme }) => ({
   },
 }));
 
+// 提取  标签内容的函数
+const extractThinkContent = (content) => {
+  const thinkRegex = /([\s\S]*?)<\/think>/g;
+  const matches = [];
+  let match;
+  let cleanContent = content;
+
+  while ((match = thinkRegex.exec(content)) !== null) {
+    matches.push(match[1].trim());
+  }
+
+  // 移除所有 think 标签
+  cleanContent = content.replace(thinkRegex, '');
+
+  return { thinkContents: matches, cleanContent };
+};
+
+const ThinkingAccordion = styled(Accordion)(({ theme }) => ({
+  marginTop: theme.spacing(1),
+  marginBottom: theme.spacing(1),
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: '8px !important',
+  boxShadow: 'none',
+  '&::before': {
+    display: 'none',
+  },
+  '&.MuiAccordion-root.Mui-expanded': {
+    margin: theme.spacing(1, 0),
+  },
+}));
+
+const ThinkingSummary = styled(AccordionSummary)(({ theme }) => ({
+  backgroundColor: theme.palette.background.default,
+  borderBottom: `1px solid ${theme.palette.divider}`,
+  minHeight: '48px !important',
+  '& .MuiAccordionSummary-content': {
+    margin: theme.spacing(0.75, 2),
+  },
+  '& .MuiAccordionSummary-content.Mui-expanded': {
+    margin: theme.spacing(0.75, 2),
+  },
+}));
+
+const ThinkingDetails = styled(AccordionDetails)(({ theme }) => ({
+  padding: theme.spacing(1.5, 2),
+  backgroundColor: theme.palette.background.paper,
+  borderTop: `1px solid ${theme.palette.divider}`,
+  '& .markdown-content': {
+    marginTop: 0,
+    marginBottom: 0,
+  },
+}));
+
 const MarkdownRenderer = ({ content, isDarkMode = false }) => {
   const theme = useTheme();
   const darkMode = isDarkMode ?? theme.palette.mode === 'dark';
+  const [thinkingExpanded, setThinkingExpanded] = useState(false);
+
+  // 提取 think 内容
+  const { thinkContents, cleanContent } = extractThinkContent(content);
 
   return (
     <StyledMarkdown>
+      {/* 思考中～折叠面板 */}
+      {thinkContents.length > 0 && (
+        <ThinkingAccordion
+          expanded={thinkingExpanded}
+          onChange={() => setThinkingExpanded(!thinkingExpanded)}
+        >
+          <ThinkingSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2" color="text.secondary">
+              ☁️ 思考中～
+            </Typography>
+          </ThinkingSummary>
+          <ThinkingDetails>
+            {thinkContents.map((thinkContent, index) => (
+              <Box key={index} className="markdown-content" sx={{ mb: index < thinkContents.length - 1 ? 2 : 0 }}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    code({ inline, className, children, ...props }) {
+                      const match = /language-(\w+)/.exec(className || '');
+                      const language = match ? match[1] : '';
+                      return !inline && language ? (
+                        <SyntaxHighlighter
+                          style={darkMode ? vscDarkPlus : vs}
+                          language={language}
+                          PreTag="div"
+                          customStyle={{
+                            margin: '8px 0',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                          }}
+                          {...props}
+                        >
+                          {String(children).replace(/\n$/, '')}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                  }}
+                >
+                  {thinkContent}
+                </ReactMarkdown>
+              </Box>
+            ))}
+          </ThinkingDetails>
+        </ThinkingAccordion>
+      )}
+
+      {/* 主要内容 */}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
@@ -176,7 +286,7 @@ const MarkdownRenderer = ({ content, isDarkMode = false }) => {
           },
         }}
       >
-        {content}
+        {cleanContent}
       </ReactMarkdown>
     </StyledMarkdown>
   );
