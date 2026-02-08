@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
   Box,
   Container,
@@ -8,36 +7,19 @@ import {
   Card,
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { loginWithGithub } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Handle GitHub OAuth callback
-  useEffect(() => {
-    const token = searchParams.get('token');
-    const username = searchParams.get('username');
-
-    if (token && username) {
-      // Store token and user info
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ user_id: 'me', username }));
-
-      // Navigate to conversations
-      navigate('/conversations', { replace: true });
-    }
-  }, [searchParams, navigate]);
-
   const handleGithubLogin = () => {
+    if (loading) return; // 防止重复点击
+
     setLoading(true);
     setError('');
 
     // Redirect to backend GitHub OAuth endpoint
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    const backendUrl = 'http://localhost:8000/api/v1';
     window.location.href = `${backendUrl}/auth/github/login`;
   };
 

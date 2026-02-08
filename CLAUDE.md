@@ -2,307 +2,145 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Current Repository Reality (important)
 
-MindFlow is an intelligent workflow application that integrates AI chat, knowledge management, and task reminders. It's built as a full-stack application with:
+- `CLAUDE.md`/README content was partially outdated; prefer the actual source tree over docs when they disagree.
+- There is currently **no automated backend test suite file** in `backend/` and no configured frontend test runner script in `frontend/package.json`.
+- A standalone service launcher exists at repo root: `start_services.sh` (starts backend/frontend, writes PID/log files under `logs/`).
 
-- **Backend**: FastAPI 0.115.0 with SQLite database
-- **Frontend**: React 19.2 with Vite 7.2 and MUI v7
-- **AI**: NVIDIA/MiniMax API integration (default: `minimaxai/minimax-m2.1`)
-- **Email**: Feishu SMTP integration for task reminders
+## Common Development Commands
 
-## Architecture
-
-### Backend Structure
-
-The backend follows a modular FastAPI architecture:
-
-```
-backend/
-├── main.py                 # Application entry point, lifespan management
-├── app/
-│   ├── config.py           # Pydantic settings (loads from .env)
-│   ├── database.py         # SQLite database initialization and utilities
-│   ├── auth.py             # JWT token generation, password hashing
-│   ├── dependencies.py     # FastAPI dependency injection (get_current_user)
-│   ├── ai_service.py       # NVIDIA API integration
-│   ├── email_service.py    # SMTP email sending
-│   ├── scheduler.py        # APScheduler for task reminders
-│   ├── schemas.py          # Pydantic models for request/response validation
-│   └── api/                # API route modules (auth, conversations, messages, etc.)
-```
-
-**Key patterns:**
-- All routes use `/api/v1` prefix
-- JWT authentication via `get_current_user` dependency
-- Database access through context manager pattern: `with db.get_connection() as conn:`
-- UUID generation via `db.generate_uuid()`
-- Global `db` instance imported from `app.database`
-
-### Frontend Structure
-
-The frontend uses React Router v7 with a protected route pattern:
-
-```
-frontend/src/
-├── main.jsx                # React entry point
-├── App.jsx                 # Router configuration with ProtectedRoute wrapper
-├── theme.js                # MUI theme (black/white minimalist design)
-├── components/
-│   ├── Layout.jsx          # Main app layout with navigation
-│   └── MarkdownRenderer.jsx  # Markdown rendering with syntax highlighting
-├── contexts/
-│   └── AuthContext.jsx     # Authentication state and token management
-├── services/
-│   └── api.js              # Axios instance with interceptors + API functions
-└── pages/                  # Page components (ConversationsPage, ChatPage, etc.)
-    ├── ChatPage.jsx         # Chat interface with streaming and markdown
-    ├── ConversationsPage.jsx # Conversation list and management
-    ├── DocumentsPage.jsx    # Document viewing and search
-    ├── LoginPage.jsx        # Authentication (login/register)
-    ├── SettingsPage.jsx     # User settings and AI model selection
-    └── TasksPage.jsx        # Task management with due dates
-```
-
-**Key patterns:**
-- Auth state stored in `localStorage` (token and user)
-- Axios interceptors auto-inject JWT and handle 401 redirects
-- Protected routes check `isAuthenticated` from AuthContext
-- SSE streaming for AI responses via `messagesAPI.sendStream()`
-- MUI v7 components with custom black/white theme
-- Markdown rendering with `react-markdown` and syntax highlighting
-
-### Database Schema
-
-SQLite database with 8 tables:
-- `users` - User accounts with bcrypt password hashes
-- `conversations` - Chat conversations linked to users
-- `messages` - Chat messages with role (user/assistant/system)
-- `documents` - Generated documents from conversations
-- `document_tags` - Tags for documents
-- `tasks` - Tasks with due dates and reminder settings
-- `email_notifications` - Email reminder history
-- `user_settings` - User preferences (default model, email)
-
-Database auto-initializes on first run at `./data/mindflow.db`.
-
-## Development Commands
-
-### Backend
+### Backend (FastAPI)
 
 ```bash
 cd backend
-
-# Create virtual environment (first time only)
 python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Configure environment
 cp .env.example .env
-# Edit .env with NVIDIA_API_KEY and email settings
-
-# Run development server
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-# Run API tests
-python test_api.py
-
-# Direct Python execution
-python main.py
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Frontend
+Useful backend checks:
+
+```bash
+# Service health
+curl http://localhost:8000/health
+
+# Open API docs
+# http://localhost:8000/docs
+```
+
+### Frontend (React + Vite)
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
-
-# Build for production
 npm run build
-
-# Lint code
 npm run lint
-
-# Preview production build
 npm run preview
 ```
 
-### Running Both Services
+Single-file linting:
 
-Start backend on port 8000, then frontend on port 5173. Vite proxy handles `/api` requests to backend.
-
-## Configuration
-
-### Required Environment Variables (.env in backend/)
-
-```env
-# Database
-DB_FILE=./data/mindflow.db
-
-# API Settings
-API_HOST=0.0.0.0
-API_PORT=8000
-API_V1_PREFIX=/api/v1
-
-# JWT Settings
-SECRET_KEY=your-secret-key-change-this-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# NVIDIA/MiniMax API - REQUIRED for AI chat
-NVIDIA_API_KEY=your-nvidia-api-key
-NVIDIA_API_BASE_URL=https://integrate.api.nvidia.com/v1/chat/completions
-DEFAULT_MODEL=minimaxai/minimax-m2.1
-
-# Email - Optional (for task reminders)
-SMTP_HOST=smtp.feishu.cn
-SMTP_PORT=465
-SMTP_USERNAME=your-email@feishu.cn
-SMTP_PASSWORD=your-smtp-password
-EMAIL_FROM=your-email@feishu.cn
-
-# CORS
-CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
-
-# Task Scheduler
-SCHEDULER_CHECK_INTERVAL_MINUTES=5
+```bash
+cd frontend
+npm run lint -- src/App.jsx
 ```
 
-Get NVIDIA API key from https://build.nvidia.com
-Available models include MiniMax M2.1, Llama 3.1 405B, and others via NVIDIA API.
+### Run both services together
 
-### Frontend Configuration
+```bash
+# from repo root
+bash ./start_services.sh
+```
 
-- API base URL: `http://localhost:8000/api/v1` (hardcoded in `services/api.js`)
-- Vite dev server: `http://localhost:5173`
-- Proxy configured in `vite.config.js`
+This script:
+- starts backend on `8000` and frontend on `5173`
+- records logs in `logs/backend.log` and `logs/frontend.log`
+- stores PIDs in `logs/backend.pid` and `logs/frontend.pid`
 
-## Key Implementation Details
+## Tests (current status)
 
-### AI Service (`app/ai_service.py`)
+- **Backend:** no committed `test_*.py` test suite found in current tree.
+- **Frontend:** `src/App.test.jsx` exists, but no `test` script/dependency is configured in `package.json`.
+- Therefore there is currently no reliable “run all tests” or “run a single test” command in this repo state.
 
-- Wraps NVIDIA/MiniMax API for chat completions
-- Supports streaming responses via async generator
-- System prompt: "You are a helpful AI assistant."
-- Returns chunks prefixed with content markers
-- Additional helper methods: `generate_summary()`, `generate_document()`, `suggest_tags()`
+## Big-Picture Architecture
 
-### Streaming SSE Implementation
+### System shape
 
-Backend (`app/api/messages.py`):
-- Generates Server-Sent Events for AI streaming
-- Events: `chunk`, `error`, `complete`
-- Uses `yield` to send events asynchronously
+- **Backend:** FastAPI app in `backend/main.py` with modular routers in `backend/app/api/*.py`.
+- **Frontend:** React SPA in `frontend/src`, routed in `frontend/src/App.jsx`.
+- **Persistence:** SQLite via a shared `Database` wrapper (`backend/app/database.py`) and global `db` instance.
+- **AI:** NVIDIA-compatible chat completion integration via `backend/app/ai_service.py`.
+- **Async jobs:** APScheduler-based reminder worker in `backend/app/scheduler.py`.
 
-Frontend (`services/api.js`):
-- `sendStream()` function with callbacks: `onChunk`, `onComplete`, `onError`
-- Parses SSE format: `event: type\ndata: JSON\n`
-- Handles text decoder buffer for partial JSON
+### Backend request lifecycle
 
-### Authentication Flow
+1. `backend/main.py` app startup runs lifespan hooks:
+   - initializes SQLite schema (`db.init_db()`)
+   - starts scheduler (`task_scheduler.start()`)
+2. Routers are mounted under `/api/v1`.
+3. Most endpoints use JWT user identity from `get_current_user` dependency.
+4. Database access consistently uses:
+   - `with db.get_connection() as conn:`
+   - automatic commit/rollback in context manager.
 
-1. User registers/logs in → returns JWT token + user data
-2. Token stored in `localStorage`
-3. Axios request interceptor adds `Authorization: Bearer <token>`
-4. Response interceptor handles 401 → redirects to `/login`
-5. Protected routes check `isAuthenticated` from AuthContext
+### Core backend domains
 
-### Task Scheduler
+- `auth.py`: username/password auth and token issuance.
+- `github_auth.py`: GitHub OAuth login/callback and account linking.
+- `conversations.py` + `messages.py`: chat history and model interaction.
+- `organize.py` + `documents.py`: convert chats into persisted docs and tags.
+- `tasks.py` + `emails.py` + `scheduler.py`: task tracking and reminder notifications.
+- `ai.py` + `user_settings` table: per-user default model selection.
 
-- APScheduler runs every 5 minutes (configurable)
-- Checks for overdue tasks with `reminder_enabled=1`
-- Sends email reminders via `email_service.py`
-- Updates `email_sent` flag on tasks
+### Streaming chat path (multi-file behavior)
 
-### Document Organization
+- Frontend uses `messagesAPI.sendStream()` in `frontend/src/services/api.js`.
+- Backend SSE endpoint is `POST /api/v1/conversations/{conversation_id}/messages/stream` in `backend/app/api/messages.py`.
+- Flow:
+  1. user message stored in `messages`
+  2. full conversation history loaded
+  3. AI stream yielded as SSE `event: chunk`
+  4. assistant final response stored in `messages`
+  5. SSE `event: complete` emitted
 
-- `/api/v1/organize/to-document` endpoint converts conversations to documents
-- AI generates summary and tags automatically
-- Links to source conversation via `source_conversation_id`
+### Frontend architecture patterns
 
-### AI Model Configuration
+- `frontend/src/App.jsx` defines public routes (`/login`, GitHub callback) and protected app routes under `Layout`.
+- Auth state is centralized in `frontend/src/contexts/AuthContext.jsx`.
+- JWT + user snapshot are stored in `localStorage`.
+- Axios interceptors in `frontend/src/services/api.js` inject bearer tokens and redirect to `/login` on 401.
+- Frontend API base URL is currently hardcoded to `http://localhost:8000/api/v1` in `services/api.js`.
+- Vite dev proxy (`frontend/vite.config.js`) proxies `/api` to backend, but current API client uses absolute base URL directly.
 
-- `/api/v1/ai/models` endpoint lists available AI models
-- Users can set default model via `/api/v1/ai/set-default`
-- Model preference stored in `user_settings` table
-- Frontend SettingsPage allows model selection UI
-- Supported models: MiniMax M2.1, Llama 3.1 405B, and other NVIDIA-hosted models
+## Database shape (operationally important)
 
-### API Endpoints Structure
+Defined in `backend/app/database.py`:
+- `users` (supports password and GitHub OAuth identities)
+- `conversations`, `messages`
+- `documents`, `document_tags`
+- `tasks`, `email_notifications`
+- `user_settings`
 
-All routes use `/api/v1` prefix. Main endpoint groups:
+Notable runtime coupling:
+- scheduler updates `tasks.status` to `overdue` and sets `email_sent`
+- default model preference is read from `user_settings.default_model_id`
 
-- **Authentication** (`/auth/*`): register, login, refresh token
-- **Conversations** (`/conversations`): CRUD operations for chat conversations
-- **Messages** (`/conversations/{id}/messages`): send messages, stream responses
-- **Documents** (`/documents`): create, view, search, and delete documents
-- **Tasks** (`/tasks`): create, update, complete tasks, send reminders
-- **Organize** (`/organize/*`): convert conversations to documents, get suggestions
-- **AI** (`/ai/*`): list available models, set user's default model
-- **Users** (`/users/*`): get user profile, update settings
-- **Email Notifications** (`/emails`): view email notification history
+## Config and environment
 
-Interactive API documentation available at `/docs` (Swagger UI) when running backend.
+Backend config is in `backend/app/config.py` (`pydantic-settings`, `.env`):
+- API host/port/prefix
+- JWT settings
+- NVIDIA API settings
+- SMTP settings
+- GitHub OAuth settings
+- scheduler interval setting (currently scheduler code uses fixed 5-minute interval)
 
-## Testing
+## External instruction files
 
-Backend includes `test_api.py` which exercises:
-- Health check
-- User registration/login
-- Creating conversations
-- Sending messages
-- Creating documents
-- Creating tasks
-
-Run with `python test_api.py` after starting the backend server.
-
-## Deployment Notes
-
-### Security Checklist
-
-Before deploying to production:
-1. Change `SECRET_KEY` in `.env` to a strong random value
-2. Update `CORS_ORIGINS` to actual frontend domain
-3. Use environment variables for all secrets
-4. Enable HTTPS
-5. Set proper file permissions on database
-6. Consider using PostgreSQL instead of SQLite for production
-
-### Database Backups
-
-SQLite database at `backend/data/mindflow.db` - backup this file regularly.
-
-## Common Issues
-
-- **NVIDIA API 401 error**: Check `NVIDIA_API_KEY` in `.env`
-- **Email sending fails**: Verify SMTP credentials and Feishu SMTP settings
-- **Frontend can't reach backend**: Ensure backend is running on port 8000
-- **Database errors**: Delete `mindflow.db` and restart to reinitialize
-- **CORS errors**: Check `CORS_ORIGINS` in backend config
-- **AI model not responding**: Verify `DEFAULT_MODEL` is supported by NVIDIA API
-
-## Adding New Features
-
-### New API Endpoint
-
-1. Add Pydantic schemas in `app/schemas.py`
-2. Create route in `app/api/` module
-3. Register router in `main.py`
-4. Add frontend API functions in `services/api.js`
-5. Build UI components as needed
-
-### New Database Table
-
-1. Add `CREATE TABLE` in `app/database.py:init_db()`
-2. Create indexes for frequently queried columns
-3. Add Pydantic model in `schemas.py`
-4. Implement CRUD operations in appropriate API module
+- No `.cursorrules` or `.cursor/rules/*` found.
+- No `.github/copilot-instructions.md` found.
