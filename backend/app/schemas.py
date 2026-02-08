@@ -64,7 +64,7 @@ class UserUpdate(BaseModel):
 
 # Conversation schemas
 class ConversationCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200)
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
 
 
 class ConversationUpdate(BaseModel):

@@ -9,20 +9,12 @@ import {
   TextField,
   Grid,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
-  Divider,
-  Fab,
   Skeleton,
 } from '@mui/material';
 import {
   Add,
   Search,
-  MoreVert,
-  Edit,
   Delete,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -35,8 +27,6 @@ const ConversationsPage = () => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [openDialog, setOpenDialog] = useState(false);
-  const [newChatTitle, setNewChatTitle] = useState('');
 
   useEffect(() => {
     fetchConversations();
@@ -56,10 +46,11 @@ const ConversationsPage = () => {
 
   const handleCreateConversation = async () => {
     try {
-      await conversationsAPI.create({ title: newChatTitle });
-      setOpenDialog(false);
-      setNewChatTitle('');
-      fetchConversations();
+      // Create conversation with default title "新对话"
+      const response = await conversationsAPI.create({});
+      const newConversationId = response.data.data.conversation_id;
+      // Navigate to the new conversation
+      navigate(`/conversations/${newConversationId}`);
     } catch (error) {
       console.error('Failed to create conversation:', error);
     }
@@ -105,7 +96,7 @@ const ConversationsPage = () => {
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => setOpenDialog(true)}
+          onClick={handleCreateConversation}
         >
           新建对话
         </Button>
@@ -183,27 +174,6 @@ const ConversationsPage = () => {
           ))}
         </Grid>
       )}
-
-      {/* Create Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>新建对话</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="对话标题"
-            value={newChatTitle}
-            onChange={(e) => setNewChatTitle(e.target.value)}
-            sx={{ mt: 2 }}
-            autoFocus
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenDialog(false)}>取消</Button>
-          <Button variant="contained" onClick={handleCreateConversation}>
-            创建
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 };

@@ -235,6 +235,42 @@ class NVIDIAAPIService:
         tags = [tag.strip() for tag in response_text.split(",") if tag.strip()]
         return tags[:5]  # Return max 5 tags
 
+    async def generate_conversation_title(self, user_message: str) -> str:
+        """
+        Generate a concise title for a conversation based on the first user message
+
+        Args:
+            user_message: The first message from the user
+
+        Returns:
+            str: Generated title (max 20 characters)
+        """
+        title_prompt = [
+            {
+                "role": "system",
+                "content": "你是一个对话标题生成助手。请根据用户的第一条消息，生成一个简洁的对话标题，标题不超过15个字，不要使用标点符号，直接返回标题即可。"
+            },
+            {
+                "role": "user",
+                "content": f"为以下对话生成标题：\n\n{user_message[:500]}"
+            }
+        ]
+
+        response_text = ""
+        async for chunk in self.chat(title_prompt, stream=False):
+            response_text += chunk
+
+        # Clean up the title
+        title = response_text.strip()
+        # Remove common prefixes if any
+        title = title.replace("标题：", "").replace("标题:", "")
+        title = title.replace("《", "").replace("》", "")
+        # Limit to 20 characters
+        if len(title) > 20:
+            title = title[:20]
+
+        return title if title else "新对话"
+
 
 # Global NVIDIA API service instance
 nvidia_service = NVIDIAAPIService()

@@ -88,6 +88,16 @@ async def send_message_stream(
 
     now = datetime.utcnow()
 
+    # Check if this is the first message (to auto-generate title later)
+    is_first_message = False
+    with db.get_connection() as conn:
+        cursor = conn.execute("""
+            SELECT COUNT(*) as count FROM messages
+            WHERE conversation_id = ?
+        """, (conversation_id,))
+        message_count = cursor.fetchone()["count"]
+        is_first_message = (message_count == 0)
+
     # Save user message
     user_message_id = db.generate_uuid()
     with db.get_connection() as conn:
@@ -149,6 +159,22 @@ async def send_message_stream(
                     WHERE conversation_id = ?
                 """, (datetime.utcnow(), conversation_id))
 
+            # Auto-generate title if this is the first message
+            if is_first_message:
+                try:
+                    generated_title = await nvidia_service.generate_conversation_title(message_data.content)
+                    # Update conversation title
+                    with db.get_connection() as conn:
+                        conn.execute("""
+                            UPDATE conversations
+                            SET title = ?
+                            WHERE conversation_id = ?
+                        """, (generated_title, conversation_id))
+                except Exception as title_error:
+                    # Log error but don't fail the message sending
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to generate title: {str(title_error)}")
+
             # Send completion event
             yield f"event: complete\ndata: {json.dumps({'message_id': assistant_message_id, 'created_at': datetime.utcnow().isoformat()})}\n\n"
 
@@ -183,6 +209,16 @@ async def send_message(
         )
 
     now = datetime.utcnow()
+
+    # Check if this is the first message (to auto-generate title later)
+    is_first_message = False
+    with db.get_connection() as conn:
+        cursor = conn.execute("""
+            SELECT COUNT(*) as count FROM messages
+            WHERE conversation_id = ?
+        """, (conversation_id,))
+        message_count = cursor.fetchone()["count"]
+        is_first_message = (message_count == 0)
 
     # Save user message
     user_message_id = db.generate_uuid()
@@ -239,6 +275,22 @@ async def send_message(
             SET updated_at = ?
             WHERE conversation_id = ?
         """, (datetime.utcnow(), conversation_id))
+
+    # Auto-generate title if this is the first message
+    if is_first_message:
+        try:
+            generated_title = await nvidia_service.generate_conversation_title(message_data.content)
+            # Update conversation title
+            with db.get_connection() as conn:
+                conn.execute("""
+                    UPDATE conversations
+                    SET title = ?
+                    WHERE conversation_id = ?
+                """, (generated_title, conversation_id))
+        except Exception as title_error:
+            # Log error but don't fail the message sending
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to generate title: {str(title_error)}")
 
     return APIResponse(
         code=200,

@@ -127,6 +127,9 @@ const ChatPage = () => {
           });
           setStreamingContent('');
           setSending(false);
+
+          // Refresh conversation data to get the auto-generated title
+          fetchConversation();
         },
         // onError - called on error
         (error) => {

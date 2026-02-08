@@ -97,11 +97,14 @@ async def create_conversation(
     conversation_id = db.generate_uuid()
     now = datetime.utcnow()
 
+    # Use provided title or default to "新对话"
+    title = conv_data.title if conv_data.title else "新对话"
+
     with db.get_connection() as conn:
         conn.execute("""
             INSERT INTO conversations (conversation_id, user_id, title, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
-        """, (conversation_id, current_user["user_id"], conv_data.title, now, now))
+        """, (conversation_id, current_user["user_id"], title, now, now))
 
     return APIResponse(
         code=201,
